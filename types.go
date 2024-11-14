@@ -1,7 +1,8 @@
 package scalar
 
-const DefaultCDN = "https://cdn.jsdelivr.net/npm/@scalar/api-reference"
-const CustomThemeCSS = `
+const (
+	DefaultCDN     = "https://cdn.jsdelivr.net/npm/@scalar/api-reference"
+	CustomThemeCSS = `
 	/* basic theme */
 	.light-mode {
 		--scalar-color-1: #2a2f45;
@@ -70,6 +71,7 @@ const CustomThemeCSS = `
 	}
 	/* Document Header */
 `
+)
 
 // Define ThemeId as a type based on string for theme identification
 type ThemeId string

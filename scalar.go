@@ -34,15 +34,12 @@ func specContentHandler(specContent interface{}) string {
 	}
 }
 
-func ApiReferenceHTML(optionsInput *Options) (string, error) {
-	options := DefaultOptions(*optionsInput)
-
+func GetScalarHTMLContent(options *Options) (string, error) {
 	if options.SpecURL == "" && options.SpecContent == nil {
 		return "", fmt.Errorf("specURL or specContent must be provided")
 	}
 
 	if options.SpecContent == nil && options.SpecURL != "" {
-
 		if strings.HasPrefix(options.SpecURL, "http") {
 			content, err := fetchContentFromURL(options.SpecURL)
 			if err != nil {
@@ -64,21 +61,46 @@ func ApiReferenceHTML(optionsInput *Options) (string, error) {
 		}
 	}
 
-	dataConfig := safeJSONConfiguration(options)
-	specContentHTML := specContentHandler(options.SpecContent)
+	return specContentHandler(options.SpecContent), nil
+}
 
-	var pageTitle string
+// GetScalarCDN returns the html script given an option.CDN
+func GetScalarCDN(options *Options) string {
+	return fmt.Sprintf(`<script src="%s"></script>`, options.CDN)
+}
 
-	if options.CustomOptions.PageTitle != "" {
-		pageTitle = options.CustomOptions.PageTitle
-	} else {
-		pageTitle = "Scalar API Reference"
+func GetCustomCSS(options *Options) string {
+	var css string
+	if options.Theme != "" {
+		return ""
 	}
 
-	customThemeCss := CustomThemeCSS
+	if options.CustomCss != "" {
+		css = options.CustomCss
+	} else {
+		css = CustomThemeCSS
+	}
 
-	if options.Theme != "" {
-		customThemeCss = ""
+	return fmt.Sprintf("<style>%s</style>", css)
+}
+
+func GetScalarScriptWithHTMLContent(config, specContent string) string {
+	return fmt.Sprintf(`<script id="api-reference" type="application/json" data-configuration="%s">%s</script>`, config, specContent)
+}
+
+func ApiReferenceHTML(optionsInput *Options) (string, error) {
+	options := DefaultOptions(*optionsInput)
+
+	specContentHTML, err := GetScalarHTMLContent(options)
+	if err != nil {
+		return "", err
+	}
+
+	var pageTitle string
+	if options.PageTitle != "" {
+		pageTitle = options.PageTitle
+	} else {
+		pageTitle = "Scalar API Reference"
 	}
 
 	return fmt.Sprintf(`
@@ -88,12 +110,12 @@ func ApiReferenceHTML(optionsInput *Options) (string, error) {
         <title>%s</title>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <style>%s</style>
+	%s
       </head>
       <body>
-        <script id="api-reference" type="application/json" data-configuration="%s">%s</script>
-        <script src="%s"></script>
+	%s
+	%s
       </body>
     </html>
-  `, pageTitle, customThemeCss, dataConfig, specContentHTML, options.CDN), nil
+  `, pageTitle, GetCustomCSS(options), GetScalarScriptWithHTMLContent(safeJSONConfiguration(options), specContentHTML), GetScalarCDN(options)), nil
 }
